@@ -83,6 +83,19 @@
 
         </step_credentials_task_template>
       </v-stepper-content>
+
+      <v-stepper-content
+          v-if="!steps_configuration['advanced'].hide"
+          :step="steps_configuration['advanced'].number">
+          <step_advanced_options_task_template
+            :project_string_id="project_string_id"
+            :job="job"
+            :loading_steps="loading"
+            @previous_step="go_to_step(steps_configuration['advanced'].number - 1)"
+            @next_step="go_to_step(steps_configuration['advanced'].number + 1)"
+          ></step_advanced_options_task_template>
+
+        </v-stepper-content>
     </v-stepper-items>
 
     <v-stepper-header style="20%" class="ma-0 pl-8 pr-8">
@@ -169,7 +182,7 @@ export default Vue.extend({
   data() {
     return {
       step: 1,
-      total_steps: 6,
+      total_steps: 7,
       loading: false,
       steps_configuration: {
         name: {
@@ -201,9 +214,14 @@ export default Vue.extend({
           number: 5,
           hide: false
         },
+        advanced: {
+          header_title: 'Advanced Settings',
+          number: 6,
+          hide: false
+        },
         credentials: {
           header_title: 'Credentials',
-          number: 6,
+          number: 7,
           hide: false
         },
       },
