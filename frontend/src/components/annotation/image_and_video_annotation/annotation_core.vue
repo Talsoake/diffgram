@@ -7,21 +7,23 @@
       <v-alert v-if="task_error.task_request" type="info">
         {{ task_error.task_request }}
       </v-alert>
+
+      <div v-if="working_file && working_file.image && working_file.image.error">
+        <v-alert type="info">
+          {{ working_file.image.error}}
+        </v-alert>
+      </div>
       <v_error_multiple :error="save_error"></v_error_multiple>
       <v_error_multiple :error="image_annotation_ctx.save_multiple_frames_error"></v_error_multiple>
-      <v_error_multiple
-        :error="image_annotation_ctx.save_warning"
-        type="warning"
-        data-cy="save_warning"
-      >
+      <v_error_multiple :error="image_annotation_ctx.save_warning"
+                        type="warning"
+                        data-cy="save_warning">
       </v_error_multiple>
       <div fluid v-if="display_refresh_cache_button">
-        <v-btn
-          small
-          color="warning"
-          @click="regenerate_file_cache"
-          :loading="regenerate_file_cache_loading"
-        >
+        <v-btn small
+               color="warning"
+               @click="regenerate_file_cache"
+               :loading="regenerate_file_cache_loading">
           <v-icon>mdi-refresh</v-icon>
           Refresh File Data
         </v-btn>
@@ -1162,6 +1164,9 @@ export default Vue.extend({
     };
   },
   computed: {
+    is_fully_zoomed_out() {
+      return this.image_annotation_ctx.zoom_value === this.canvas_mouse_tools.canvas_scale_global
+    },
     canvas_id: function(){
       return `my_canvas_${this.working_file.id}`
     },
@@ -1270,6 +1275,9 @@ export default Vue.extend({
       }
 
       return true;
+    },
+    is_mouse_down() {
+      return this.$store.state.annotation_state.mouse_down
     },
     mouse_computed: function () {
       if (this.$store.state.annotation_state.mouse_down == false) {
@@ -3467,6 +3475,11 @@ export default Vue.extend({
       this.hide_context_menu();
       this.canvas_mouse_tools.zoom_wheel(event);
       this.image_annotation_ctx.zoom_value = this.canvas_mouse_tools.scale;
+
+      if ( this.instance_hover_index == null ) {
+        this.canvas_element.style.cursor = this.is_fully_zoomed_out ? "default" : "grab";
+      }
+
       this.update_canvas();
     },
 
@@ -3474,6 +3487,9 @@ export default Vue.extend({
       this.canvas_mouse_tools.reset_transform_with_global_scale();
       this.canvas_mouse_tools.scale = this.canvas_mouse_tools.canvas_scale_global;
       this.image_annotation_ctx.zoom_value = this.canvas_mouse_tools.scale;
+      if ( this.instance_hover_index == null ) {
+        this.canvas_element.style.cursor = "default";
+      }
       this.update_canvas();
     },
 
@@ -4059,7 +4075,7 @@ export default Vue.extend({
         if (this.lock_point_hover_change == false) {
           let hovered_instance = this.instance_list[this.instance_hover_index]
           if (this.canvas_element && (!hovered_instance || !SUPPORTED_IMAGE_CLASS_INSTANCE_TYPES.includes(hovered_instance.type))) {
-            this.canvas_element.style.cursor = "default";
+            this.canvas_element.style.cursor = this.is_fully_zoomed_out ? "default" : "grab";
           }
 
         }
@@ -5140,15 +5156,25 @@ export default Vue.extend({
 
     mouse_move: function (event) {
 
+      const is_panning = this.is_mouse_down
+        && this.instance_hover_index == null
+        && !this.draw_mode
+
       if(!this.is_active){
         return
       }
-      if (this.z_key === true || this.mouse_wheel_button) {
+
+      if ( !this.is_fully_zoomed_out && ( this.z_key === true || this.mouse_wheel_button ) ) {
         this.move_position_based_on_mouse(event.movementX, event.movementY);
         this.canvas_element.style.cursor = "move";
         this.$forceUpdate();
         return;
+      } else if (is_panning && !this.is_fully_zoomed_out ) {
+        this.move_position_based_on_mouse(-event.movementX, -event.movementY);
+        this.canvas_element.style.cursor = "grabbing";
+        this.$forceUpdate();
       }
+
       this.mouse_position = this.mouse_transform(event, this.mouse_position);
 
       this.move_something(event);

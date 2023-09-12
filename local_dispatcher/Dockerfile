@@ -1,5 +1,7 @@
-FROM python:3.7.16-bullseye
-LABEL python_version=python3.7.16
+FROM python:3.11.1-bullseye
+LABEL python_version=python3.11.1
+
+ENV DOCKER_CONTEXT=True
 
 # Set virtualenv environment variables. This is equivalent to running
 # source /env/bin/activate
@@ -12,6 +14,6 @@ RUN pip3 install -r /app/requirements.txt
 ADD local_dispatcher/ /app/
 ADD shared/ /app/
 WORKDIR /app/
-#CMD exec gunicorn --bind :$PORT --timeout 120 --worker-class eventlet --workers 3 --no-sendfile --config python:my_conf main:app
+
 EXPOSE 8085
 CMD python local_dispatch.py

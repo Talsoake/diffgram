@@ -237,11 +237,11 @@ class DataToolsAzure:
             }
         }
         response = azure_connection.fetch_data(params)
-        if response is None or response.get('result') is None:
+        if response is None or response.get('signed_url') is None:
             msg = f'Error from Datatools Azure: {params}. Response: {response}'
             logger.error(msg)
             return None
-        url = response.get('result')
+        url = response.get('signed_url')
         return url
 
     def get_string_from_blob(self, blob_name: str):
@@ -336,13 +336,6 @@ class DataToolsAzure:
     # Could have seperate method to do from working dir
     # This is the iterative update method?
 
-    def yaml_new_internal(self, session, version, project):
-        """
-        Load existing YAML file
-        Do updates
-        Save YAML file to version directory
-        """
-        raise NotImplementedError
 
     # OLD TODO refactor to new style
     def categoryMap(session):

@@ -6,7 +6,7 @@
 [Request Slack Invite](https://www.jotform.com/form/222377866413058)
 
 
-# The AI Datestore
+# The AI Datastore
 The AI Datastore for Schemas, BLOBs, and Predictions. Use with your apps or integrate built-in Human Supervision, Data Workflow, and UI Catalog to get the most value out of your AI Data.
 
 [**Learn more**](https://diffgram.readme.io/docs)
@@ -42,7 +42,7 @@ read the commercial open source [license](https://github.com/diffgram/diffgram/b
 
 * [Install Diffgram](https://diffgram.readme.io/docs/install)
 * [Sales Info](https://diffgram.readme.io/docs/sales)
-* [Try Online Playground](https://diffgram.com/user/data_platform/new)
+* [Try Online Playground](https://app.diffgram.com/user/data_platform/new)
 * [Join us on Slack](https://www.jotform.com/form/222377866413058)
 * [Contribute](https://diffgram.readme.io/docs/contribute)
 

@@ -12,6 +12,8 @@
       />
     </div>
 
+    <audio class="audio-controls" ref="audio" preload="auto" controls="controls"></audio>
+
   </div>
 </template>
 
@@ -19,7 +21,7 @@
 
 import Vue from "vue";
 import WaveSurfer from 'wavesurfer.js';
-import RegionPlugin from 'wavesurfer.js/dist/plugin/wavesurfer.regions.min.js';
+import Regions from 'wavesurfer.js/dist/plugins/regions.js'
 
 export default Vue.extend({
   name: 'waveform_selector',
@@ -48,12 +50,19 @@ export default Vue.extend({
     return{
       loading_audio: false,
       wavesurfer: null,
-      zoom: 0
+      zoom: 0,
+      regions: null,
+      disableDragSelection: null,
+      // NOTE: regionIdToIsCreatedMap is used to keep track of rendered regions
+      regionIdToIsCreatedMap: {},
     }
   },
   watch:{
     zoom: function() {
       this.wavesurfer.zoom(this.zoom)
+    },
+    instance_list() {
+      this.update_render()
     },
     force_watch_trigger: function() {
       this.update_render()
@@ -63,12 +72,8 @@ export default Vue.extend({
     },
     current_label: function() {
       if (this.current_label) {
-        this.wavesurfer.disableDragSelection()
-  
         const { r, g, b } = this.current_label.colour.rgba
-        this.wavesurfer.enableDragSelection({
-          color: `rgba(${r}, ${g}, ${b}, 0.5)`
-        })
+        this.updateRegionColor(r, g, b)
       }
     }
   },
@@ -81,62 +86,92 @@ export default Vue.extend({
       progressColor: '#595959',
       normalize: true,
       autoCenter: true,
-      mediaControls: true,
-      loading_audio: true,
-      responsive: true,
-      height: 300,
-      backend: 'MediaElement',
-      plugins: [
-        RegionPlugin.create()
-      ]
+      media: this.$refs.audio
     });
 
-    this.wavesurfer.on('region-update-end', this.on_annotate)
+    this.regions = this.wavesurfer.registerPlugin(Regions.create())
 
-    this.wavesurfer.on('region-click', function(region, e) {
-        e.stopPropagation();
-        region.wavesurfer.play(region.start, region.end);
-    });
+    this.regions.on('region-updated', this.on_region_update)
+    this.regions.on('region-created', this.on_region_create)
+
+    this.regions.on('region-clicked', (region, e) => {
+      e.stopPropagation() // prevent triggering a click on the waveform
+      region.play()
+    })
+
+    if (this.current_label) {
+      const { r, g, b } = this.current_label.colour.rgba
+      this.updateRegionColor(r, g, b)
+    }
 
     this.load_audio();
     this.update_render()
   },
+  unmounted () {
+    if (typeof this.disableDragSelection === 'function') {
+      this.disableDragSelection()
+    }
+  },
   methods: {
     update_render: function() {
-      const region_keys = Object.keys(this.wavesurfer.regions.list)
-      const instances_to_add = this.instance_list.filter(inst => !inst.audiosurfer_id || !region_keys.includes(inst.audiosurfer_id))
 
-      instances_to_add.map(inst => {
+      const regionsList = this.regions.regions
+      // NOTE: initiall used this.regions.regions.map(({id}) => id) to keep track of ids for
+      // regions that were added but this.regions.regions take too much time to update which
+      // results in same regions get rendered more than once
+      const regionsIds = Object.keys(this.regionIdToIsCreatedMap)
+
+      // true if instance doesn't have audiosurfer_id set or has but it's not present
+      const instances_to_add = this.instance_list.filter(inst => !inst.audiosurfer_id || !regionsIds.includes(inst.audiosurfer_id))
+
+      instances_to_add.forEach(inst => {
         const { r, g, b } = inst.label_file.colour.rgba
 
-        const added_region = this.wavesurfer.addRegion({
+        const added_region = this.regions.addRegion({
             id: inst.audiosurfer_id,
             start: inst.start_time,
             end: inst.end_time,
             color: `rgba(${r}, ${g}, ${b}, 0.5)`
           })
+
+        this.regionIdToIsCreatedMap[added_region.id] = true
+
         this.$emit('asign_wavesurfer_id', inst.id, added_region.id)
       })
 
-      region_keys.map(key => {
-        const instance = this.instance_list.find(inst => inst.audiosurfer_id === key)
-        if (instance) {
+      regionsList.forEach((region, idx) => {
+        const instance = this.instance_list.find(inst => inst.audiosurfer_id === region.id)
+
+        if ( instance ) {
           const { start_time, end_time, label_file } = instance
-          if (!this.invisible_labels.includes(label_file.id)) {
+          if (!this.invisible_labels.includes(label_file.id) && !instance.soft_delete ) {
             const { r, g, b } = instance.label_file.colour.rgba
-            const region_to_update = this.wavesurfer.regions.list[key]
-            region_to_update.color = `rgba(${r}, ${g}, ${b}, 0.5)`
-            region_to_update.start = start_time
-            region_to_update.end = end_time
-            region_to_update.updateRender()
+            region.setOptions({
+              color: `rgba(${r}, ${g}, ${b}, 0.5)`,
+              start: start_time,
+              end: end_time,
+            })
           } else {
-            this.wavesurfer.regions.list[key].remove()
+            delete this.regionIdToIsCreatedMap[region.id]
+            region.remove()
           }
         } else {
-          this.wavesurfer.regions.list[key].remove()
+            delete this.regionIdToIsCreatedMap[region.id]
+            region.remove()
         }
       })
     },
+
+    updateRegionColor(r, g, b) {
+      if (typeof this.disableDragSelection === 'function') {
+        this.disableDragSelection()
+      }
+
+      this.disableDragSelection = this.regions.enableDragSelection({
+        color: `rgba(${r}, ${g}, ${b}, 0.5)`
+      })
+    },
+
     load_audio: function(){
       this.loading_audio = true
       if(!this.audio_file || !this.audio_file.audio || !this.audio_file.audio.url_signed){
@@ -148,10 +183,19 @@ export default Vue.extend({
       this.wavesurfer.on('error', this.on_audio_error);
 
     },
-    on_annotate: function(e) {
+
+    on_region_create: function(e) {
       const { id, start, end } = e
-      this.$emit('instance_create_update', id, start, end)
+
+      this.regionIdToIsCreatedMap[id] = true
+      this.$emit('instance_create', id, start, end)
     },
+
+    on_region_update: function(e) {
+      const { id, start, end } = e
+      this.$emit('instance_update', id, start, end)
+    },
+
     on_audio_ready: function(){
       this.loading_audio = false;
     },
@@ -169,6 +213,11 @@ export default Vue.extend({
 <style scoped>
 
 .wave-form-container{
+  width: 100%;
+}
+
+.audio-controls {
+  margin-top: 30px;
   width: 100%;
 }
 
