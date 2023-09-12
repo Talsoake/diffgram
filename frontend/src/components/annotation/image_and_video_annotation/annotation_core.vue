@@ -2102,19 +2102,11 @@ export default Vue.extend({
       }
 
       // current_instance is computed
-      // TODO use function in create instance command
-      let new_instance = duplicate_instance(this.current_drawing_box_instance, this)
+      let new_instance = duplicate_instance(this.current_instance, this)
       new_instance = this.initialize_instance(new_instance) as Instance
-      new_instance = post_init_instance(new_instance,
-        this.label_file_map,
-        this.canvas_element,
-        this.label_settings,
-        this.canvas_transform,
-        this.instance_hovered,
-        this.instance_unhovered,
-        this.canvas_mouse_tools
-      )
-      new_instance.set_la
+      new_instance.machine_made = true;
+      new_instance.label_file_id = this.current_label_file_id;
+
       new_instance.x_min = parseInt(x_min);
       new_instance.x_max = parseInt(x_max);
       new_instance.y_min = parseInt(y_min);
@@ -2139,9 +2131,19 @@ export default Vue.extend({
       const command = new CreateInstanceCommand(new_instance, this, this.image_annotation_ctx.current_frame);
       this.annotation_ui_context.command_manager.executeCommand(command);
 
-      this.event_create_instance = new_instance;
+      post_init_instance(this.instance_list[this.instance_list.length -1],
+        this.label_file_map,
+        this.canvas_element,
+        this.label_settings,
+        this.canvas_transform,
+        this.instance_hovered,
+        this.instance_unhovered,
+        this.canvas_mouse_tools
+      )
+      this.new_instance_refresh(this.instance_list.length -1)
 
-      //this.$emit('created_instance', new_instance)
+      this.event_create_instance = new_instance;
+      return new_instance;
     },
 
     check_reasonableness: function (instance) {
@@ -4184,11 +4186,11 @@ export default Vue.extend({
       ) {
         return;
       } // careful 0 index is ok
-    
+
       if (!this.issues_ui_manager.issues_list[this.issue_hover_index]) {
         return;
       }
-  
+
       if (this.draw_mode) {
         return;
       }
