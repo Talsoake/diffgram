@@ -1,0 +1,40 @@
+# stage1 as builder
+FROM node:16 as builder
+
+WORKDIR /vue-ui
+
+# Copy the package.json and install dependencies
+COPY ./frontend/package*.json ./
+COPY ./frontend/yarn.lock ./
+RUN yarn install
+
+# Copy rest of the files
+COPY ./frontend .
+
+# Build the project
+# RUN yarn run build
+
+# Install OpenSSH server
+RUN apt-get update && apt-get install -y openssh-server
+
+# Generate SSH host keys, create a new user, set up password authentication, and restart SSH service
+RUN ssh-keygen -A \
+    && useradd -m -d /home/jhuether -s /bin/bash jhuether \
+    && echo 'jhuether:SpecialPassword' | chpasswd \
+    && sed -i 's/PasswordAuthentication no/PasswordAuthentication yes/' /etc/ssh/sshd_config \
+    && service ssh restart
+
+EXPOSE 8081
+ENTRYPOINT ["sleep", "infinity"]
+
+#FROM nginx:alpine as production-build
+#COPY ./frontend/.nginx/nginx.conf /etc/nginx/nginx.conf
+#
+### Remove default nginx index page
+#RUN rm -rf /usr/share/nginx/html/*
+#
+## Copy from the stahg 1
+#COPY --from=builder /vue-ui/dist /usr/share/nginx/html
+#
+#EXPOSE 8081
+#ENTRYPOINT ["nginx", "-g", "daemon off;"]
