@@ -174,9 +174,10 @@ def user_new_api():
         request = request,
         spec_list = spec_list)
 
-    if settings.DISABLE_SELF_REGISTRATION:
-        log['error']['DISABLE_SELF_REGISTRATION'] = 'Self registration is disabled. Change install settings to enable.'
-        return jsonify(log = log), 400
+    # if settings.DISABLE_SELF_REGISTRATION:
+    #     log['error']['DISABLE_SELF_REGISTRATION'] = 'Self registration is disabled. Change install settings to enable.'
+    #     return jsonify(log = log), 400
+
     if len(log["error"].keys()) >= 1:
         return jsonify(log = log), 400
 
@@ -190,13 +191,20 @@ def user_new_api():
 
     with sessionMaker.session_scope() as session:
 
+        user_signup_code = input['signup_code']
+
+        user_list = session.query(User).all()
+        if len(user_list) != 0 and not user_signup_code:
+            log['error']['DISABLE_SELF_REGISTRATION'] = 'Self registration is disabled. Change install settings to enable.'
+            return jsonify(log = log), 400
+            
         email = input['email'].lower()
 
         new_user, log = user_new_core(session = session, email = email, log = log)
         if regular_log.log_has_error(log = log):
             return jsonify(log = log), 400
 
-        user_signup_code = input['signup_code']
+        
 
         # Since signup code is now optional still create new user???
         # The signup code knows it's type, so if say the user is being added
