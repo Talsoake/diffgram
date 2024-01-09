@@ -155,7 +155,7 @@ def user_new_api():
         },
         {"signup_code": {
             'kind': str,
-            'required': False
+            'required': True
         }
         },
         {"password": {
