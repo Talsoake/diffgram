@@ -6,8 +6,7 @@ sqlalchemy==1.4.48
 psycopg2-binary==2.9.6
 numpy==1.24.3
 scipy==1.10.1
-pillow==9.3.0
-pyyaml==5.4.1
+pillow==10.0.1
 proglog==0.1.9
 google-cloud-storage==1.35.1
 google-api-python-client==1.12.3
@@ -17,7 +16,7 @@ Flask-SSLify==0.1.5
 requests==2.31.0
 imageio==2.9.0
 analytics-python==1.2.9
-cryptography==41.0.0
+cryptography==41.0.6
 colorlog==4.2.1
 boto3==1.16.4
 azure-storage-blob==12.8.0
@@ -29,9 +28,8 @@ pika
 python-keycloak
 pyjwt==2.6.0
 opencv-python==4.7.0.72
-torch==2.0
 torchvision==0.15.1
-transformers==4.30.0
+transformers==4.36.0
 deepchecks[vision]
 memory-profiler==0.55.0
 opencv-contrib-python==4.7.0.72
@@ -41,3 +39,4 @@ azure-ai-textanalytics
 newrelic
 apscheduler==3.10.1
 pymongo
+python-dotenv==1.0.0

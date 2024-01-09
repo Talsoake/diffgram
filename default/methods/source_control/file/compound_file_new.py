@@ -135,11 +135,11 @@ def file_compound_new_core(session: Session,
 
     dataset = WorkingDir.get_by_id(session = session, directory_id = directory_id)
 
-    if dataset.project_id != project.id:
+    if not dataset or dataset.project_id != project.id:
         msg = f'Dataset {directory_id} does not belong to project {project.project_string_id}'
         log['error']['directory_id'] = msg
-
         return None, log
+
     existing_file = File.get_by_name_and_directory(session = session,
                                                    directory_id = directory_id,
                                                    file_name = name,
@@ -169,7 +169,8 @@ def file_compound_new_core(session: Session,
     )
     input_obj.file_id = file.id
     input_obj.original_filename = name
-    input_obj.status = 'success'
+    input_obj.status = 'base_object_created'
+    input_obj.processing_deferred = False
     input_obj.percent_complete = 100
     session.add(input_obj)
     session.flush()

@@ -22,4 +22,5 @@ ENV HF_HOME=/tmp/
 WORKDIR /app/
 EXPOSE 8086
 
-CMD ["python", "main.py"]
+
+CMD exec newrelic-admin run-program python main.py

@@ -31,10 +31,14 @@ class DataToolsMinio(DataToolsS3):
         signed_url = super().build_secure_url(blob_name = blob_name,
                                               expiration_offset = expiration_offset,
                                               bucket = bucket)
-        if settings.DIFFGRAM_STATIC_STORAGE_PROVIDER == 'minio' and signed_url.startswith('http://minio:9000'):
-            signed_url = signed_url.replace('http://minio:9000', 'http://localhost:8085/minio')
-        return signed_url
+        if settings.DOCKER_COMPOSE_CONTEXT == True:
+            # note need to proxy request through local dispatcher so users can access from the browser
+            return self.get_local_dispatcher_proxy_path(signed_url)
+        else:
+            return signed_url
 
+    def get_local_dispatcher_proxy_path(self, signed_url):
+        return signed_url.replace(settings.DIFFGRAM_MINIO_ENDPOINT_URL, 'http://localhost:8085/proxy_to_minio')
 
     def __init__(self):
 

@@ -77,6 +77,15 @@ describe("Test annotation_core", () => {
 
       },
       propsData: {
+        hotkey_listener: {
+          addScope: jest.fn(),
+          addFilter: jest.fn(),
+          onKeyup: jest.fn(),
+          onKeydown: jest.fn(),
+          onSpecialKeydown: jest.fn(),
+          onSpecialKeyup: jest.fn(),
+          setScopes: jest.fn()
+        },
         label_schema: {
           id: 1,
           name: 'test'
