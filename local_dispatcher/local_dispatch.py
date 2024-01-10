@@ -21,7 +21,7 @@ env_adapter = EnvAdapter()
 class Service():
     def __init__(self, name, host, port, select_path_function, is_default=False, map_service_path=lambda path : path):
         self.name = name
-        self.host = host
+        self.host = 'http://localhost'
         self.port = port
         self.select_path_function = select_path_function
         self.is_default = is_default
@@ -161,10 +161,10 @@ class DockerComposeIngress(Ingress):
 
         self.name = "Docker Compose"
 
-        self.default.host = 'http://default'
-        self.walrus.host = 'http://walrus'
-        self.frontend.host = 'http://frontend'
-        self.frontend.port = 80
+        # self.default.host = 'http://default'
+        # self.walrus.host = 'http://walrus'
+        # self.frontend.host = 'http://frontend'
+        # self.frontend.port = 80
 
 
         DOCKER_COMPOSE_CONTEXT = env_adapter.bool(os.getenv('DOCKER_COMPOSE_CONTEXT', False))
@@ -172,7 +172,7 @@ class DockerComposeIngress(Ingress):
         if DOCKER_COMPOSE_CONTEXT == True:
             self.minio = Service(
                 name = 'minio',
-                host = 'http://minio',
+                host = 'http://localhost',
                 port = 9000,
                 select_path_function = lambda path : True if path[: 14] == "proxy_to_minio" else False,
                 map_service_path = lambda path : path.replace('proxy_to_minio/', '')
