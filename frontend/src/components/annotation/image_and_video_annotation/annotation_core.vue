@@ -2270,8 +2270,9 @@ export default Vue.extend({
       y_min,
       x_max,
       y_max,
+      label_file_id = undefined,
       userscript_id = undefined,
-      frame_number = undefined
+      frame_number = undefined,
     ) {
       /*
       * Used in context of userscripts.
@@ -2290,7 +2291,11 @@ export default Vue.extend({
       let new_instance = duplicate_instance(this.current_instance, this)
       new_instance = this.initialize_instance(new_instance) as Instance
       new_instance.machine_made = true;
-      new_instance.label_file_id = this.current_label_file_id;
+      if (label_file_id == undefined) {
+        new_instance.label_file_id = this.current_label_file_id;
+      } else {
+        new_instance.label_file_id = label_file_id;
+      }
 
       new_instance.x_min = parseInt(x_min);
       new_instance.x_max = parseInt(x_max);
@@ -2300,8 +2305,8 @@ export default Vue.extend({
       new_instance.width = parseInt(x_max - x_min);
       new_instance.height = parseInt(y_max - y_min);
 
-      new_instance.change_source =
-        "userscript_" + this.get_userscript_id_string(userscript_id);
+      //new_instance.change_source =
+        //"userscript_" + this.get_userscript_id_string(userscript_id);
 
       let reasonable = this.check_reasonableness(new_instance);
       if (reasonable != true) {
@@ -2432,16 +2437,25 @@ export default Vue.extend({
       instance.height = parseInt(instance.y_max - instance.y_min);
     },
 
-    create_polygon: function (points_list, userscript_id = undefined) {
+    create_polygon: function (points_list,
+                              label_file_id = undefined,
+                              userscript_id = undefined) {
       /*
       * Used in context of userscripts
       * */
-      let new_instance = duplicate_instance(this.current_drawing_polygon_instance, this)
+      let new_instance = duplicate_instance(this.current_instance, this)
       new_instance = this.initialize_instance(new_instance)
+      new_instance.machine_made = true;
       new_instance.type = "polygon";
       new_instance.points = points_list;
-      new_instance.change_source =
-        "userscript_" + this.get_userscript_id_string(userscript_id);
+      //new_instance.change_source =
+        //"userscript_" + this.get_userscript_id_string(userscript_id);
+
+      if (label_file_id == undefined) {
+        new_instance.label_file_id = this.current_label_file_id;
+      } else {
+        new_instance.label_file_id = label_file_id;
+      }
 
       this.update_polygon_width_height(new_instance);
       //console.debug(new_instance.width, new_instance.height)
@@ -2455,6 +2469,18 @@ export default Vue.extend({
       const command = new CreateInstanceCommand(new_instance, this, this.image_annotation_ctx.current_frame);
       this.annotation_ui_context.command_manager.executeCommand(command);
       this.event_create_instance = new_instance;
+
+      post_init_instance(this.instance_list[this.instance_list.length -1],
+        this.label_file_map,
+        this.canvas_element,
+        this.label_settings,
+        this.canvas_transform,
+        this.instance_hovered,
+        this.instance_unhovered,
+        this.canvas_mouse_tools
+      )
+      this.new_instance_refresh(this.instance_list.length -1)
+
       return new_instance;
     },
 
